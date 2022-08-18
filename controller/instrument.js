@@ -154,8 +154,8 @@ exports.sendMessageToUser = sendMessageToUser
  * @access  Public
  */
 const sendNotificationToAssignedusers = async (orderId,notidata) => {
- // get invites from group list that has order id and get distinct users according to mobile number
-    let assignedGroups = await Group.findAll({scales: { $regex: '.*' + orderId + '.*' } }).select('invites -_id').sort({ created_at: -1 });
+ // get invites from group list that has order id and get distinct users according to mobile number {where:{scales: {[Op.like]: orderId }}}   
+    let assignedGroups = await Group.findAll({where:{scales: {[Op.like]: orderId }},attributes:['invites','id'],order:['created_at','DESC']});
     if(assignedGroups.length == 0){
       return;
     }

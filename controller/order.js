@@ -3,6 +3,7 @@ const { asyncFunc, throwError } = require("../lib/functions"),
     WeightData = require("../models/WeightData"),
     Mailer = require('../lib/mailer'),
     Order = require("../models/Order"),
+    Scale = require("../models/Scale"),
     {sendMessageToUser} = require("./instrument"),
     handlebars = require("handlebars"),
     fs = require("fs"),
@@ -11,7 +12,8 @@ const { asyncFunc, throwError } = require("../lib/functions"),
     path = require("path");
 
 
-
+Order.hasOne(Scale);
+Order.hasOne(User);
 exports.addorder = asyncFunc(async (req, res, next) => {
     let userdata = req.user();
 
@@ -158,126 +160,12 @@ exports.order_list = asyncFunc(async (req, res, next) => {
 
  exports.orderDataBYDeviceID = asyncFunc(async (req, res, next) => {
     try{
-        let device_id = req.params.device_id;
-        let order = await Order.findOne({where:{device_id},attributes:['order_type', 'expire_date', 'containerWeight', 'weightPerItem', 'weight_threshold', 'battery_threshold', 'name', 'order_capacity', 'description', 'device_id', 'deviceStatus', 'id']});
+        let order = await Order.findOne({where:{device_id:req.params.device_id}});
         // get current weight and battery
-        let currentApiData = await WeightData.findOne({where:{device_id},order: [['created_at', 'DESC']]});
+        let currentApiData = await WeightData.findOne({where:{device_id},[Op.gt]:created_at});
         wtData = currentApiData.api_data.data
-        let lastTenData = '';
-         if(req.body.start_date != '' && req.body.end_date != '' && req.body.type == 'day'){
-             lastTenData = await WeightData
-             .aggregate(
-                 [{ match: { [Op.and]: [{created_at: {[Op.gte]: new Date(`${req.body.start_date}T00:00:00.000Z`),
-                 [Op.lt]: new Date(`${req.body.end_date}T00:00:00.000Z`)}},{device_id}] } },
-                 {
-                     $project: {
-                         api_data : 1,
-                         device_id : 1,
-                         created_at : 1,
-                         updated_at : 1,
-                         _id : 1
- 
-                     }
-                 },
-                 {
-                     
-                     group: {
-                         _id : { year:{"$year":"$created_at"},month:{"$month":"$created_at"},day:{"$dayOfMonth":"$created_at"},hour:{"$hour":"$created_at"}},
-                         doc:{"$first":"$$ROOT"}
-                     }
-                 },
-                 {$replaceRoot:{"newRoot":"$doc"}}
-                 
-             ],{order:['created_at','ASC']}).exec()
-         }
-         else if(req.body.start_date != '' && req.body.end_date != '' && req.body.type == 'week'){
-             lastTenData = await WeightData
-             .aggregate(
-                 [{ match: { [Op.and]: [{created_at: {[Op.gte]: new Date(`${req.body.start_date}T00:00:00.000Z`),
-                 [Op.lt]: new Date(`${req.body.end_date}T00:00:00.000Z`)}},{device_id}] } },
-                 {
-                     $project: {
-                         api_data : 1,
-                         device_id : 1,
-                         created_at : 1,
-                         updated_at : 1,
-                         _id : 1
- 
-                     }
-                 },
-                 {
-                     
-                     group: {
-                         _id : { week:{"$week":"$created_at"}},
-                         doc:{"$first":"$$ROOT"}
-                     }
-                 },
-                 {$replaceRoot:{"newRoot":"$doc"}}
-                 
-             ],{order:['created_at','ASC']}).exec()
-         }
-         else if(req.body.start_date != '' && req.body.end_date != '' && req.body.type == 'month'){
-             lastTenData = await WeightData
-             .aggregate(
-                 [{ match: { [Op.and]: [{created_at: {[Op.gte]: new Date(`${req.body.start_date}T00:00:00.000Z`),
-                 [Op.lt]: new Date(`${req.body.end_date}T00:00:00.000Z`)}},{device_id}] } },
-                 {
-                     $project: {
-                         api_data : 1,
-                         device_id : 1,
-                         created_at : 1,
-                         updated_at : 1,
-                         _id : 1
- 
-                     }
-                 },
-                 {
-                     
-                     group: {
-                         _id : { year:{"$year":"$created_at"},month:{"$month":"$created_at"},day:{"$dayOfMonth":"$created_at"}},
-                         doc:{"$first":"$$ROOT"}
-                     }
-                 },
-                 {$replaceRoot:{"newRoot":"$doc"}}
-                 
-             ],{order:['created_at','ASC']}).exec()
-         }
-         else if(req.body.start_date != '' && req.body.end_date != '' && req.body.type == 'year'){
-             lastTenData = await WeightData
-             .aggregate(
-                 [{ match: { [Op.and]: [{created_at: {[Op.gte]: new Date(`${req.body.start_date}T00:00:00.000Z`),
-                 [Op.lt]: new Date(`${req.body.end_date}T00:00:00.000Z`)}},{device_id}] } },
-                 {
-                     $project: {
-                         api_data : 1,
-                         device_id : 1,
-                         created_at : 1,
-                         updated_at : 1,
-                         _id : 1
- 
-                     }
-                 },
-                 {
-                     
-                     group: {
-                         _id : { year:{"$year":"$created_at"},month:{"$month":"$created_at"}},
-                         doc:{"$first":"$$ROOT"}
-                     }
-                 },
-                 {$replaceRoot:{"newRoot":"$doc"}}
-                 
-             ],{order:['created_at','ASC']}).exec()
-         }
-         else 
-         {
-             lastTenData = await WeightData.findOne({where:{device_id},order:['created_at','DESC'],limit:10});
-         }
-      
-         lastTenData.filter((entry) => {
-            if(entry.api_data.data.timeStamp != ""){
-                return entry;
-            }
-        })
+        
+         
          return res.json({
              status: 200,
              message: res.__("Device Details fetched successfully"),
@@ -359,8 +247,8 @@ exports.order_list = asyncFunc(async (req, res, next) => {
     try{
         // get scales purchased by you
         let orders = await Order.find({where:{user:userdata._id, delivery_date: { [Op.ne]: null }},order:['created_at','DESC']});  //order: [['created_at', 'DESC']]
-        // get scales assigned to you
-        let assignedGroups = await Group.findAll({invites: { $regex: '.*' + userdata.mobile + '.*' } }).select('scales -_id').sort({ created_at: -1 });
+        // get scales assigned to you        [op.in]:invites:{[Op.like]:userdata.mobile} 
+        let assignedGroups = await Group.findAll({where:{invites: {[Op.like]: userdata.mobile }}} ,{attributes:['scales','id']},{order:['created_at','DESC']});
         let allOrderIds = []
         assignedGroups.forEach((grp)=>{
             grp.scales.forEach((orderId)=>{

@@ -2,8 +2,13 @@ const Sequelize = require("sequelize");
 const sequelize = require("../db/connection");
 
 const Weightdata = sequelize.define("weightdata", {
+   id:{
+      type: Sequelize.INTEGER,
+      autoIncrement: true,
+      primaryKey: true
+     },
     api_data: {
-   type: Sequelize.JSON,
+   type: Sequelize.LONGTEXT,     //JSON,
    allowNull: false,
    //primaryKey: true,
 },

@@ -2,6 +2,11 @@ const Sequelize = require("sequelize");
 const sequelize = require("../db/connection");
 
 const Usersession = sequelize.define("usersession", {
+    id:{
+        type: Sequelize.INTEGER,
+        autoIncrement: true,
+        primaryKey: true
+       },
     user: {
         type: Sequelize.STRING,
         allowNull: false,

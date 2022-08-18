@@ -53,7 +53,7 @@ exports.updateStatus = asyncFunc(async (req, res, next) => {
         let user = await User.update( {
             whitelist : whitelist,
             status : status
-        },{where:{userid}})   
+        },{where:{id:userid}})   
         res.status(200).json({
             status: 200,
             message: 'User updated successfully',
@@ -67,7 +67,7 @@ exports.updateStatus = asyncFunc(async (req, res, next) => {
 exports.del_user = asyncFunc(async (req, res, next) => {
     try{
         const user_id = req.params.user_id
-        const category =  await User.destroy({where:{user_id}})
+        const category =  await User.destroy({where:{id:user_id}})
        
         res.status(200).json({
             status: 200,
@@ -85,7 +85,7 @@ exports.updatewhitelistStatus = asyncFunc(async (req, res, next) => {
         const userid = req.body.user_id
         let user = await User.update( {
             whitelist : whitelist
-        },{where:{userid}})   
+        },{where:{id:userid}})   
         res.status(200).json({
             status: 200,
             message: 'User whitelist status updated successfully',
@@ -119,7 +119,7 @@ try{
 exports.updateuser = asyncFunc(async (req, res, next) => {
     try{          
         const userid = req.params.user_id
-        let user = await User.update( req.body,{where:{userid}})   
+        let user = await User.update( req.body,{where:{id:userid}})   
         res.status(200).json({
             status: 200,
             message: 'User updated successfully',
@@ -134,7 +134,7 @@ exports.updateuser = asyncFunc(async (req, res, next) => {
 exports.singleuser = asyncFunc(async (req, res, next) => {
     try{          
         const userid = req.params.user_id
-        let user = await User.findOne(userid)   
+        let user = await User.findOne({where:{id:userid}})   
         res.status(200).json({
             status: 200,
             message: 'User fetched successfully',

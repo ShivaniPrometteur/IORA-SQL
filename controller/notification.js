@@ -10,7 +10,10 @@ const { asyncFunc, throwError } = require("../lib/functions"),
  * @route   GET api/notifications
  * @desc    Notification list
  * @access  Private
+ * 
  */
+
+Notification.hasOne(User);
 exports.notification_list = asyncFunc(async (req, res, next) => {
     let user = req.user();
     let notifications = await Notification.findAll({where:{user:user.id},order:['created_at','DESC']}); 

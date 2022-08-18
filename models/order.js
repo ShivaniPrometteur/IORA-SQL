@@ -2,6 +2,12 @@ const Sequelize = require("sequelize");
 const sequelize = require("../db/connection");
 
 const Order = sequelize.define("order", {
+
+   id:{
+      type: Sequelize.INTEGER,
+      autoIncrement: true,
+      primaryKey: true
+     },
  name: {
    type: Sequelize.STRING,
    allowNull: false,
