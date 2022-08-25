@@ -2,109 +2,151 @@ const { asyncFunc, throwError } = require("../lib/functions"),
     User = require("../models/User"),
     WeightData = require("../models/WeightData"),
     Mailer = require('../lib/mailer'),
-    Order = require("../models/Order"),
-    Scale = require("../models/Scale"),
+    Order = require("../models/orrder"),
+    Ord=require("../models/orrder")
+    Scale = require("../models/scale"),
     {sendMessageToUser} = require("./instrument"),
     handlebars = require("handlebars"),
     fs = require("fs"),
     Notification = require("../models/Notification");
-    Group = require("../models/Group");
+    const Group = require("../models/group");
     path = require("path");
+    const { Op } = require("sequelize");
+    
 
 
-Order.hasOne(Scale);
-Order.hasOne(User);
-exports.addorder = asyncFunc(async (req, res, next) => {
-    let userdata = req.user();
+    Scale.hasOne(Ord);
+   
+    User.hasOne(Ord);
+    
+   
+  
+
+   // exports.addorder = asyncFunc(async (req, res, next) => {
+//    // let userdata = req.user();
 
     
-    let bodydata = {           
-        ...req.body,
-        user: userdata._id
-    }
-    if(bodydata.order_type == 'rent')
+//     let bodydata = {           
+//         ...req.body
+//        // user: userdata.id
+//     }
+//     if(bodydata.order_type == 'rent')
+//     {
+//         let today = new Date();
+//         today.setFullYear(today.getFullYear() + 1);
+//         bodydata.expire_date = today
+//     }
+//     let order = new Order(bodydata)
+//      try {
+//             await order.save()
+//             // send mail to delivery address email
+            
+//          const emailTemplateSource = fs.readFileSync(path.join(__dirname, "../templates/order-purchase-successfully.hbs"), "utf8");
+//          const template = handlebars.compile(emailTemplateSource)
+//          const htmlToSend = template({...req.body})
+
+//          const emailImages = [{
+//             filename: 'facebook.png',
+//             path: path.join(__dirname, '../public/images/facebook.png'),
+//             cid: 'facebook'
+//     },{
+//             filename: 'favicon.png',
+//             path: path.join(__dirname, '../public/images/favicon.png'),
+//             cid: 'favicon'
+//     },{
+//             filename: 'instagram.png',
+//             path: path.join(__dirname, '../public/images/instagram.png'),
+//             cid: 'instagram'
+//     },{
+//             filename: 'linkedin.png',
+//             path: path.join(__dirname, '../public/images/linkedin.png'),
+//             cid: 'linkedin'
+//     },{
+//             filename: 'logo.png',
+//             path: path.join(__dirname, '../public/images/logo.png'),
+//             cid: 'logo'
+//     },{
+//             filename: 'twitter.png',
+//             path: path.join(__dirname, '../public/images/twitter.png'),
+//             cid: 'twitter'
+//     }]
+
+//             Mailer.sendMail({
+//                 to: req.body.d_email, // list of receivers
+//                 subject: "Purchase successful", // Subject line
+//                 html: htmlToSend, // html body
+//                 attachments: emailImages,
+//               },(error,response) =>{
+//                 //   console.log(error,response)
+//               })
+//             res.status(201).send({
+//                 status: 200,
+//                 message: res.__("Ordered successfully"),
+//                 data: order
+//             })
+//      } catch (e) {
+//          res.status(400).send(e) 
+//      }
+// });
+
+
+exports.addorder = async (req, res) => {
+    try {
+      
+      const order = await Order.create(req.body);
+      if(req.body.order_type == 'rent')
     {
         let today = new Date();
         today.setFullYear(today.getFullYear() + 1);
         bodydata.expire_date = today
     }
-    let order = new Order(bodydata)
-     try {
-            await order.save()
-            // send mail to delivery address email
-            
-         const emailTemplateSource = fs.readFileSync(path.join(__dirname, "../templates/order-purchase-successfully.hbs"), "utf8");
-         const template = handlebars.compile(emailTemplateSource)
-         const htmlToSend = template({...req.body})
-
-         const emailImages = [{
-            filename: 'facebook.png',
-            path: path.join(__dirname, '../public/images/facebook.png'),
-            cid: 'facebook'
-    },{
-            filename: 'favicon.png',
-            path: path.join(__dirname, '../public/images/favicon.png'),
-            cid: 'favicon'
-    },{
-            filename: 'instagram.png',
-            path: path.join(__dirname, '../public/images/instagram.png'),
-            cid: 'instagram'
-    },{
-            filename: 'linkedin.png',
-            path: path.join(__dirname, '../public/images/linkedin.png'),
-            cid: 'linkedin'
-    },{
-            filename: 'logo.png',
-            path: path.join(__dirname, '../public/images/logo.png'),
-            cid: 'logo'
-    },{
-            filename: 'twitter.png',
-            path: path.join(__dirname, '../public/images/twitter.png'),
-            cid: 'twitter'
-    }]
-
-            Mailer.sendMail({
-                to: req.body.d_email, // list of receivers
-                subject: "Purchase successful", // Subject line
-                html: htmlToSend, // html body
-                attachments: emailImages,
-              },(error,response) =>{
-                //   console.log(error,response)
-              })
-            res.status(201).send({
-                status: 200,
-                message: res.__("Ordered successfully"),
-                data: order
-            })
-     } catch (e) {
-         res.status(400).send(e) 
-     }
-});
+      res.status(200).send(order);
+    } catch (err) {
+      res.status(404).send(err);
+    }
+  };
 
 
-exports.order_list = asyncFunc(async (req, res, next) => {
-    let userdata = req.user();
+
+// exports.order_list = asyncFunc(async (req, res, next) => {
+//     let userdata = req.body;
     
-    try{
-        let filter = {user:userdata._id}
-        if(req.body.isDelievered == "true"){
-            filter.delivery_date = {$ne : null}
-        }
-        let orders = await Order.findAll({where:{filter},order: [['created_at', 'DESC']]});
-        res.status(200).json({
-            status: 200,
-            message: 'Orders fetched successfully',
-            data: orders
+//     try{
+//         let filter = {user:userdata.id}
+//         // if(req.body.isDelievered == "true"){
+//         //     filter.delivery_date = {$ne : null}
+//         // }
+//         let orders = await Order.findAll({where:{filter},order: [['created_at', 'DESC']]});
+//         res.status(200).json({
+//             status: 200,
+//             message: 'Orders fetched successfully',
+//             data: orders
+//         })
+//     }catch (e) {
+//          res.status(400).send(e) 
+//      }
+//  });
+
+
+exports.order_list = async (req, res) => {
+    try {
+      const search = { userId: req.body.userid };
+      await Order.findAll({ where: search })
+        .then((orders) => {
+          res.status(200).send(orders);
         })
-    }catch (e) {
-         res.status(400).send(e) 
-     }
- });
+        .catch((e) => {
+          res.status(404).send(e);
+        });
+    } catch (e) {
+      res.status(400).send(e);
+    }
+  };
 
  
  exports.admin_order_list = asyncFunc(async (req, res, next) => {
     try{
-        let orders = await Order.findAll({order:['created_at','DESC']});
+        let orders = await Order.findAll({});
         res.status(200).json({
             status: 200,
             message: 'Orders fetched successfully',
@@ -130,30 +172,34 @@ exports.order_list = asyncFunc(async (req, res, next) => {
             console.log('device id:'+req.body.device_id)
             return res.json({
                 status: 200,
-                message: res.__("Device Id Cannot be empty")
+                message: "Device Id Cannot be empty"
             });
         }
-        if(req.body.device_id && (req.body.device_id != "" || req.body.device_id != null) ){
-            let deviceExistcheck = await Order.count({where:{device_id:req.body.device_id,id: { [Op.ne]: orderId }}});
-            if (deviceExistcheck > 0 ) {
-                deviceExist = true
-            }
-        }
+        // if(req.body.device_id && (req.body.device_id != "" || req.body.device_id != null) ){
+        //     let deviceExistcheck = await Order.findOne({where:{device_id:req.body.device_id,id: { [Op.ne]: orderId }}});
+        //     if (deviceExistcheck.length > 0 ) {
+        //         deviceExist = true
+        //     }
+        // }
 
-        if(deviceExist == true){
-            return res.json({
-                status: 200,
-                message: res.__("Device Id Already Added")
-            });
-        }
-        let order = await Order.update({...req.body} , {where:{orderId} });
-        return res.json({
-            status: 200,
-            message: res.__("Order updated successfully"),
-            data:order
-        });
+        // if(deviceExist == true){
+        //     return res.json({
+        //         status: 200,
+        //         message: "Device Id Already Added"
+        //     });
+        // }
+        //let order = await Order.update( {where:{id:orderId} },{...req.body} );
+        const order = await Order.findOne({ where: { id: orderId } });
+      await order.update(req.body).then((result) => {
+        res.status(200).send(result);
+      });
+        // return res.json({
+        //     status: 200,
+        //     message: "Order updated successfully",
+        //     data:order
+        // });
     }catch (e) {
-         res.status(400).send(e) 
+         res.status(400).send(e.message) 
      }
  });
 
@@ -180,25 +226,31 @@ exports.order_list = asyncFunc(async (req, res, next) => {
  exports.orderById = asyncFunc(async (req, res, next) => {
     try{
         let order_id = req.params.order_id;
-        let order = await Order.findOne({where:{order_id},attributes:['delivery_date', 'device_id']});
+        let order = await Order.findOne({where:{id:order_id},attributes:['delivery_date', 'device_id']});
+        if(!order){
+            return res.status(404).send({msg:"order not found"})
+        }
          return res.json({
              status: 200,
-             message: res.__("Order Details fetched successfully"),
+             message: "Order Details fetched successfully",
              data:{order}
          }); 
     }catch (e) {
-         res.status(400).send(e) 
+         res.status(400).send(e.message) 
      }
  });
 
 
  exports.deviceNotSendingData = asyncFunc(async (req, res, next) => { 
     try{      
-        const filter = {
-            device_id: { $ne: null },
-            deviceStatus:true
-        }
-       let devices = await Order.findAll({where:{filter},attributes:['device_id', 'timeDifference', 'user_id']});
+        // const filter = {
+        //     device_id: {
+        //         [Op.ne]: null 
+        //       },
+        //     //device_id: { $ne: null },
+        //     deviceStatus:true
+        // }
+       let devices = await Order.findAll({where:{device_id: {[Op.ne]: null},deviceStatus:true}});    //,attributes:['device_id', 'timeDifference', 'userId']
         var start = new Date();
         start.setHours(0,0,0,0);
 
@@ -236,34 +288,35 @@ exports.order_list = asyncFunc(async (req, res, next) => {
         //         devices:devices
         //     })
     } catch (e) {
-        console.log(e)
+        console.log(e.message)
         // res.status(500).send()
     }    
   });
 
 
   exports.scalesInHome = asyncFunc(async (req, res, next) => {
-    let userdata = req.user();
+    //let userdata = req.user();
     try{
         // get scales purchased by you
-        let orders = await Order.find({where:{user:userdata._id, delivery_date: { [Op.ne]: null }},order:['created_at','DESC']});  //order: [['created_at', 'DESC']]
+        let orders = await Order.findOne({where:{userId:req.query.user_id, delivery_date: { [Op.ne]: null }}});  //order: [['created_at', 'DESC']]
         // get scales assigned to you        [op.in]:invites:{[Op.like]:userdata.mobile} 
-        let assignedGroups = await Group.findAll({where:{invites: {[Op.like]: userdata.mobile }}} ,{attributes:['scales','id']},{order:['created_at','DESC']});
+        let assignedGroups = await Group.findAll({where:{invites: {[Op.like]: req.body.mobile }}} ,{attributes:['scales','id']});
         let allOrderIds = []
         assignedGroups.forEach((grp)=>{
             grp.scales.forEach((orderId)=>{
                 allOrderIds.push(orderId)
             })
         })
-        let assignedOrders = await Order.findAll({ where:{id: { [Op.in]: allOrderIds } , delivery_date: { [Op.ne]: null }},order:['created_at','DESC']});
+        let assignedOrders = await Order.findAll({ where:{id: { [Op.in]: allOrderIds } , delivery_date: { [Op.ne]: null }}});
 
         res.status(200).json({
             status: 200,
             message: 'Scales fetched successfully',
-            data: [...orders,...assignedOrders]
+            data:orders ,
+            assignedorders:assignedOrders     // [...orders,...assignedOrders]
         })
     }catch (e) {
-         res.status(400).send(e) 
+         res.status(400).send(e.message) 
      }
 });
 

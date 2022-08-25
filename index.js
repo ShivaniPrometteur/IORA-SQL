@@ -1,21 +1,37 @@
 const express = require("express");
-const bodyParser = require("body-parser");
+//const Sequelize = require("sequelize");
+//const sequelize = require("../db/connection");
 
+const bodyParser = require("body-parser");
+const route = require('./routes/route');
 
 const sequelize = require("./db/connection");
 
-const user = require("./models/user");
-const order = require("./models/order");
-const group = require("./models/group");
-const notification = require("./models/Notification");
-const scale = require("./models/scale");
-const settings = require("./models/settings");
-const usersession = require("./models/usersession");
-const weightdata = require("./models/weightdata");
+const User = require("./models/user");
+const Scale = require("./models/scale");
+const Order = require("./models/order");
+
+const Notification = require("./models/Notification");
+
+//const Ord = require("./models/orrder");
+const Group = require("./models/group");
+
+
 
 const app = express();
 
+
 app.use(bodyParser.urlencoded({ extended: false }));
+
+
+
+//User.hasOne(Notification);
+//Group.hasOne(Scale); /.....
+// User.hasOne(Ord);
+// Scale.hasOne(Ord);
+app.use('/', route);
+
+//sequelize.sync({force:true});
 
 const port=8080;
 app.listen(port,()=>{

@@ -1,9 +1,9 @@
 const { asyncFunc, throwError } = require("../lib/functions"),
     WeightData = require("../models/WeightData");
-    Order = require("../models/Order");
-    User = require("../models/User");
-    Notification = require("../models/Notification");
-    Config = require('config');
+    const Order = require("../models/Order");
+    const User = require("../models/User");
+    const Notification = require("../models/Notification");
+    const Config = require('config');
     var request = require('postman-request')
     let FIREBASE_SERVER_KEY = Config.get("FIREBASE_SERVER_KEY")
 
@@ -14,19 +14,21 @@ const { asyncFunc, throwError } = require("../lib/functions"),
 **/
 
 exports.weightData = asyncFunc(async (req, res, next) => {
-    let inputdata = {
-        api_data : {...req.body},
-        device_id : req.body.devID
-    } 
+    // let inputdata = {
+    //     api_data : {...req.body},
+    //     device_id : req.body.devID
+    // } 
+    console.log("hi")
     try{
-      if(req.body.data.timeStamp == ""){
-        return  res.status(500).send('TimeStamp cannot be empty');
-      }
-        const weighdata = new WeightData(inputdata);
-        const weigh = await weighdata.save();
-        let currentBattery = req.body.data.currBt;
-        let currentWeight = req.body.data.currWt;
-        let orderData = await Order.findOne({where:{device_id:inputdata.device_id}})
+      // if(req.body.data.timeStamp == ""){
+      //   return  res.status(500).send('TimeStamp cannot be empty');
+      // }
+      console.log("hiii")
+       // const weighdata = req.body;
+        const weigh = await WeightData.create(req.body);
+        let currentBattery = req.body.currBt;
+        let currentWeight = req.body.currWt;
+        let orderData = await Order.findOne({where:{device_id:req.body.device_id}})
         let title = '';
         let message = '';
         let count = 0;
@@ -89,7 +91,7 @@ exports.weightData = asyncFunc(async (req, res, next) => {
             data: weigh
         });
     } catch (e) {
-        res.status(500).send(e);
+        res.status(500).send(e.message);
     }    
 });
 /**
@@ -99,14 +101,14 @@ exports.weightData = asyncFunc(async (req, res, next) => {
  */
 exports.allweightData = asyncFunc(async (req, res, next) => { 
     try{      
-        const weigh = await WeightData.findAll({order:['created_at','DESC'],attributes:['device_id'],limit:50});
+        const weigh = await WeightData.findAll({});
         res.status(200).json({
             status: 200,
-            message: 'Data added successfully',
+            message: 'Data fetched successfully',
             data: weigh
         })
     } catch (e) {
-        res.status(500).send()
+        res.status(500).send(e.message)
     }    
 });
 

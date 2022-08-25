@@ -13,10 +13,16 @@ const { asyncFunc, throwError } = require("../lib/functions"),
  * 
  */
 
-Notification.hasOne(User);
+User.hasOne(Notification);
+// Notification.belongsTo(User);
+
 exports.notification_list = asyncFunc(async (req, res, next) => {
-    let user = req.user();
-    let notifications = await Notification.findAll({where:{user:user.id},order:['created_at','DESC']}); 
+    try{
+    let user = req.body.user;
+    if(!req.body.user){
+        return res.status(400).send({msg:"please provide user id"})
+    }
+    let notifications = await Notification.findAll({where:{userId:user},order:['created_at','DESC']}); 
     notifications = notifications.map((notiData,index)=>{
         notistatus = notiData.notistatus?notiData.notistatus:false;
         notiData = {
@@ -35,6 +41,9 @@ exports.notification_list = asyncFunc(async (req, res, next) => {
         message: 'Notifications fetched successfully',
         data: notifications
     })
+}catch (e) {
+    res.status(400).send(e.message) 
+}
 });
 
 /**
@@ -48,15 +57,27 @@ exports.notification_list = asyncFunc(async (req, res, next) => {
         ...req.body,
         notistatus : req.body.notistatus == 'true'?true:false
     }
-    const notification = await Notification.update( bodydata, {where:{noti_id}})
+    const notification = await Notification.update( bodydata, {where:{id:noti_id}})
      try {
-        let updated = await notification.save()
+        
         res.status(201).send({
             status: 200,
-            message: res.__("Notification updated successfully."),
-            data: updated
+            message: "Notification updated successfully.",
+            data: notification
         })
      } catch (e) {
-         res.status(400).send(e) 
+         res.status(400).send(e.message) 
      }
 })
+
+// exports.updateOrder = async (req, res) => {
+//     try {
+//       const noti_id = req.params.noti_id;
+//       const notification = await Notification.findOne({ where: { id: noti_id } });
+//       await notification.update(req.body).then((result) => {
+//         res.status(200).send(result);
+//       });
+//     } catch (err) {
+//       res.status(404).send(err);
+//     }
+//   };

@@ -1,21 +1,34 @@
 const Sequelize = require("sequelize");
 const sequelize = require("../db/connection");
 
-const Weightdata = sequelize.define("weightdata", {
+const Weightttdata = sequelize.define("weightttdata", {
    id:{
       type: Sequelize.INTEGER,
       autoIncrement: true,
       primaryKey: true
      },
-    api_data: {
-   type: Sequelize.LONGTEXT,     //JSON,
-   allowNull: false,
-   //primaryKey: true,
-},
+//     api_data: {
+//    type: Sequelize.JSON,     //JSON,
+//    allowNull: false,
+//    //primaryKey: true,
+// },
 device_id: {
    type: Sequelize.TEXT,
    allowNull: false,
-}
+},
+timeStamp: {
+   type: Sequelize.TEXT,
+   allowNull: false,
+},
+currWt: {
+   type: Sequelize.TEXT,
+   allowNull: false,
+},
+currBt: {
+   type: Sequelize.TEXT,
+   allowNull: false,
+},
+
 });
 
-module.exports = Weightdata;
+module.exports = Weightttdata;

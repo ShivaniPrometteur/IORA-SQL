@@ -17,13 +17,18 @@ description: {
    allowNull: false,
 },
 invites: {
-   type: Sequelize.TEXT,
-   allowNull: false,
+   type: Sequelize.STRING,
+   allowNull: true,
+   defaultValue:''
 },
 scales: {
     type: Sequelize.STRING,
-    allowNull: false,
- },
+    allowNull: true,
+    defaultValue:''
+ }
+
+ 
+ 
 });
 
 module.exports = Group;

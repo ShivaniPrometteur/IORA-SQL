@@ -2,13 +2,15 @@ const { asyncFunc, throwError } = require("../../lib/functions");
 const User = require("../../models/User");
 const Config = require("config");
 const UserSession = require("../../models/UserSession");
+const jwt=require("jsonwebtoken");
+const adminToken=require("../../models/adminToken")
 
 /**
  * @route   POST api/auth/register
  * @desc    Create a new user
  * @access  Public
  */
-exports.register = asyncFunc(async (req, res, next) => {
+exports.register = async (req, res, next) => {
     const payload = req.body;
     let data = {
         name: payload.name,
@@ -34,52 +36,61 @@ exports.register = asyncFunc(async (req, res, next) => {
             data: doc
         });
     });
-});
+};
 
 /**
  * @route   POST api/auth/login
  * @desc    User login
  * @access  Public
  */
-exports.login = asyncFunc(async (req, res, next) => {
+exports.login = async (req, res, next) => {
     const { username, password } = req.body;
-    let user = await User.findOne({where:{ email: username, admin: true }});
+    let user = await User.findOne({where:{ email: username,password:password}});   //admin:true
     if (!user) {
         throwError("!invalid login details");
     }
 
+    let token = jwt.sign({Id: user.id.toString()},"Prometteur");
+
     // Throw error when not match password
-    if (!user.matchPassword(password)) {
-        throwError("!invalid login details");
-    }
+    // if (!user.matchPassword(password)) {
+    //     throwError("!invalid login details");
+    // }
 
     // Let's create user session
-    let session = await user.createSession({
-        ip: req.ip,
-        user_agent: req.get("user_agent"),
-        device_id: req.body.device_id,
-        expire_time: 120
-    });
+    // let session = await user.createSession({
+    //     ip: req.ip,
+    //     user_agent: req.get("user_agent"),
+    //     device_id: req.body.device_id,
+    //     expire_time: 120
+    // });
+    // const tokenentry=await adminToken.create({token:token,id:1});
+    // let allreadylogin=await adminToken.findOne({where:{id:1}});
+    // if(allreadylogin){
+    //     let newtoken=await adminToken.update({token:token},{where:{id:1}})
+    // }
 
     return res.json({
         status: 200,
         message: "Successfully Login",
         data: {
-            access_token: session.token
+            access_token: token
         }
     });
 
-})
+    
+
+}
 
 /**
  * @route   GET api/auth/logout
  * @desc    User logout
  * @access  Private
  */
-exports.logout = asyncFunc(async (req, res, next) => {
-    await UserSession.destroy({where:{id:req.session().id}});
+exports.logout = async (req, res, next) => {
+    await adminToken.update(null,{where:{id:1}});
     res.json({
         status: 200,
         message: "Logout successfully"
     })
-})
+}

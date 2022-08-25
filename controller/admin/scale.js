@@ -1,6 +1,6 @@
 const { asyncFunc, throwError, throw404Error } = require("../../lib/functions");
-const Scale = require("../../models/Scale")
-const Setting = require("../../models/Setting");
+const Scale = require("../../models/scale")
+const Setting = require("../../models/Settings");
 
 
 /**
@@ -55,7 +55,7 @@ exports.delete = asyncFunc(async (req, res, next) => {
     const scale_id = req.params.scale_id
     if(scale_id){
         try{
-            const scales =  await Scale.destroy({where:{scale_id}})
+            const scales =  await Scale.destroy({where:{id:scale_id}})
             res.status(200).send({
                 status: 200,
                 message: 'Scales Deleted successfully',
@@ -78,7 +78,7 @@ exports.scalesById = asyncFunc(async (req, res, next) => {
     const scale_id = req.params.scale_id
     if(scale_id){
         try{
-           const scale = await Scale.findOne({where:{scale_id}})
+           const scale = await Scale.findOne({where:{id:scale_id}})
            res.status(200).send({
             status: 200,
             message: 'scale fetched successfully',
@@ -130,7 +130,25 @@ exports.scalesById = asyncFunc(async (req, res, next) => {
         exports.updatescale = asyncFunc(async (req, res, next) => {
             try{          
                 const scale_id = req.params.scale_id
-                let scale = await Scale.update(req.body,{where:{scale_id}})   
+
+                const {name,capacity,status,description,price,rent}=req.body
+                const findPersonById=await Scale.findOne({where:{id:scale_id}});
+                if(!findPersonById){
+                    res.status(400).send({
+                        status:'error',
+                        message:`Person with id ${id} not found`
+                    });
+                }
+
+                if(name){findPersonById.name=name;}
+                if(capacity){findPersonById.capacity=capacity;}
+                if(status){findPersonById.status=status;}
+                if(description){findPersonById.description=description;}
+                if(price){findPersonById.price=price;}
+                if(rent){findPersonById.rent=rent;}
+
+                const scale=await findPersonById.save();
+                //let scale = await Scale.update({where:{scale_id}},req.body)   
                 res.status(200).json({
                     status: 200,
                     message: 'Scale updated successfully',

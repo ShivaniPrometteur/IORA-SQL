@@ -1,3 +1,4 @@
+const { asyncFunc, throwError } = require("../lib/functions")
 const User = require("../models/user"),
 UserSession = require("../models/UserSession"),
 Helper = require("../lib/functions").helper,
@@ -6,23 +7,26 @@ Mailer = require('../lib/mailer'),
 handlebars = require("handlebars"),
 fs = require("fs");
 const { Op } = require("sequelize");
+const jwt=require("jsonwebtoken")
 
 
 exports.register = asyncFunc(async (req, res, next) => {
 
-    let emailuser = await User.count({where:{email:req.body.email}})
+    let emailuser = await User.findOne({where:{email:req.body.email}})
 
         console.log(req.body.email)
-        let mob_user = await User.count({where:{mobile:req.body.mobile}})
-        console.log(req.body.mobile)
+        let mob_user = await User.findOne({where:{contact_number:req.body.contact_number}})
+        console.log(req.body.contact_number)
         if(emailuser > 0 || mob_user > 0){
             return res.json({
                 status: 400,
-                message: res.__("User already exist. Please login.."),
+                message: "User already exist. Please login..",
             })
         } 
+
         
         let data=req.body
+        console.log(data)
 
         let final =await User.create(data)
 
@@ -30,61 +34,97 @@ exports.register = asyncFunc(async (req, res, next) => {
 });
 
 
-exports.login = asyncFunc(async (req, res, next) => {
-    console.log(req.body)
+exports.login = async (req, res, next) => {
     const { username, password } = req.body;
-    // get user                 
-    let user = await User.findOne({ where:{
-        [Op.or]:
-            {email:username},
-        [Op.or]:
-            {'mobile':username} 
-            
-     }})
-    if(user){
-        if (!user.matchPassword(password)) {
-            throwError("!invalid login details");
-        }
-        //check if user is verified
-        if(user.verify_mobile == true || user.verify_email == true){       
-            // Let's create user session
-        let session = await user.createSession({
-            ip: req.ip,
-            user_agent: req.get("user_agent"),
-            device_id: req.body.device_id
-        });
-        // update the fcm key
-        user = await User.update({
-            fcm_key:req.body.fcm_key,
-            loginmedia:req.body.loginmedia
-        } , {where : {id:user.id}}); 
-        return res.json({
-                status: 200,
-                message: res.__("Logged in successfully"),
-                data:user,
-                access_token: session.token,
-                active_status: user.status==1?'active':'inactive'
-            });
-        }else{
-            return res.json({
-                status: 400,
-                message: res.__("Please verify account")
-            });
-        }
-    }else{
-        return res.json({
-            status: 400,
-            message: res.__("Incorrect Credentials")
-        });
+    let user = await User.findOne({where:{ email: username,password:password}});   //admin:true
+    if (!user) {
+        throwError("!invalid login details");
     }
-});
+
+    let token = jwt.sign({Id: user.id.toString()},"Prometteur");
+
+
+      return res.json({
+                        status: 200,
+                        message: "Logged in successfully",
+                        data:user,
+                        access_token: token,
+                        //active_status: user.status==1?'active':'inactive'
+                    });
+}
+            
+
+    
+
+    // return res.json({
+    //     status: 200,
+    //     message: "Successfully Login",
+    //     data: {
+    //         access_token: token
+    //     }
+    // });
+
+    
+
+
+
+
+// exports.login = asyncFunc(async (req, res, next) => {
+//     console.log(req.body)
+//     const { username, password } = req.body;
+//     // get user                 
+//     let user = await User.findOne({ where:{
+//         [Op.or]:
+//             {email:username},
+//         [Op.or]:
+//             {'mobile':username} 
+            
+//      }})
+//     if(user){
+//         if (!user.matchPassword(password)) {
+//             throwError("!invalid login details");
+//         }
+//         //check if user is verified
+//         if(user.verify_mobile == true || user.verify_email == true){       
+//             // Let's create user session
+//         // let session = await user.createSession({
+//         //     ip: req.ip,
+//         //     user_agent: req.get("user_agent"),
+//         //     device_id: req.body.device_id
+//         // });
+//         // update the fcm key
+//         user = await User.update({
+//             fcm_key:req.body.fcm_key,
+//             loginmedia:req.body.loginmedia
+//         } , {where : {id:user.id}}); 
+//         return res.json({
+//                 status: 200,
+//                 message: res.__("Logged in successfully"),
+//                 data:user,
+//                 access_token: session.token,
+//                 active_status: user.status==1?'active':'inactive'
+//             });
+//         }else{
+//             return res.json({
+//                 status: 400,
+//                 message: res.__("Please verify account")
+//             });
+//         }
+//     }else{
+//         return res.json({
+//             status: 400,
+//             message: res.__("Incorrect Credentials")
+//         });
+//     }
+// });
 
 
 exports.profile = asyncFunc(async (req, res, next) => {
     
-   let data= User.findAll({})
+   let data= await User.findAll({})
+   console.log(data)
 
-    res.json({
+    return res.status(200).send({
         status: 200,
         message: "Data fetched successfully",
         data: data
@@ -94,36 +134,54 @@ exports.profile = asyncFunc(async (req, res, next) => {
 
 exports.update_profile = asyncFunc(async (req, res, next) => {
     try{
-        let user = req.user();
+        //let user = req.user();
         if(req.body.current_password || req.body.new_password  ){
             // check if current password for user is same
-            if (!user.matchPassword(req.body.current_password)) {
+
+            
+
+            let user= await User.findOne({where:{[Op.and]:{password:req.body.current_password},[Op.and]:{id:req.body.id}}})
+            if (!user) {
                 return res.json({
                     status: 400,
-                    message: res.__("Current password doesnot match")
+                    message: "Current password doesnot match"
                 });
             }else{  
                 Helper.bcrypt.hash(req.body.new_password, async function (hash) {
                     if (hash.error) {
                         return next(hash.error);
                     }
-                   await User.update({password:hash},{where:{id:user.id}}); 
+                   await User.update({password:hash},{where:{id:req.body.id}}); 
                     next();
                 });
             }
             delete req.body.current_password
             delete req.body.new_password
         }
-        user = await User.update(req.body , {where:{id:user.id}}); 
+       let  userr = await User.update(req.body,{where:{id:req.body.id}}); 
         res.json({
             'status': 200,
-            'message': res.__("Profile updated successfully"),
-            'data': user
+            'message': "Profile updated successfully",
+            'data': userr
         });
     } catch (e) {
-        res.status(500).send(e)
+        res.status(500).send(e.message)
     } 
 })
+
+
+// exports.update_profile = async (req, res) => {
+//     try {
+//       const user = await User.findOne({
+//         where: { id: req.user.id, email: req.user.email },
+//       });
+//       await user.update(req.body).then((result) => {
+//         res.status(200).send(result);
+//       });
+//     } catch (err) {
+//       res.status(404).send(err);
+//     }
+//   };
 
 exports.settings = asyncFunc(async (req, res, next) => {
     let user = req.user()
@@ -189,14 +247,14 @@ exports.language = asyncFunc(async (req, res, next) => {
 exports.updatefcm = asyncFunc(async (req, res, next) => {
     try{
         const fcm_key = req.body.fcm_key
-        const userid =  req.user().id
+        const userid =  req.body.id
         let user = await User.update({fcm_key : fcm_key},{where:{id:userid}})   
         res.status(200).json({
             status: 200,
             message: 'Fcm updated successfully'
         })
     } catch (e) {
-        res.status(500).send()
+        res.status(500).send(e.message)
     }    
 });
 
@@ -209,7 +267,7 @@ exports.send_otp = asyncFunc(async (req, res, next) => {
                 message: 'User with email already exist.'
             })  
         }
-        let mob_user = await User.findOne({where:{mobile:req.body.mobile}})
+        let mob_user = await User.findOne({where:{contact_number:req.body.mobile}})
         if(mob_user){
             return res.status(200).json({
                 status: 400,
@@ -268,7 +326,7 @@ exports.send_otp = asyncFunc(async (req, res, next) => {
                 }
             })
     } catch (e) {
-        res.status(500).send(e)
+        res.status(500).send(e.message)
     }    
 });
 
@@ -282,7 +340,7 @@ exports.update_verifystatus = asyncFunc(async (req, res, next) => {
                    email:username
                },
                [Op.or]: {
-                   mobile: username
+                   contact_number: username
                }
             }
            })
@@ -299,7 +357,7 @@ exports.update_verifystatus = asyncFunc(async (req, res, next) => {
             message: 'Verification status updated.'
         })
     } catch (e) {
-        res.status(500).send()
+        res.status(500).send(e.message)
     } 
  });
 
@@ -386,18 +444,26 @@ exports.update_verifystatus = asyncFunc(async (req, res, next) => {
  exports.changePassword = asyncFunc(async (req, res, next) => {
     try{
         const {username,password} = req.body
-        let user = await User.findOne({ 
-            where:{
-                [Op.or]:{email:username},
-                [Op.or]:{mobile:username}
-            }
-         })
+        // let user = await User.findOne({ 
+        //     where:{
+        //         [Op.or]:{email:username},
+        //         [Op.or]:{contact_number:username}
+        //     }
+        //  })
+
+        let user = await User.findOne({ where:{email:username}})
          if(!user){
+
+            var userr=await User.findOne({ where:{contact_number:username}})
+        }
+
+
+        if(!user && !userr){
             return res.status(200).json({
                 status: 400,
                 message: 'User not found. Please create account.'
             })
-         }
+        }
          if(!password || password == ""){
             return res.status(200).json({
                 status: 400,
@@ -414,10 +480,10 @@ exports.update_verifystatus = asyncFunc(async (req, res, next) => {
         });
         return res.status(200).json({
             'status': 200,
-            'message': res.__("Password changed successfully.")
+            'message': "Password changed successfully."
         });
 
     } catch (e) {
-        res.status(500).send({e,message:'There was some issue. Please try later.'});
+        res.status(500).send(e.message);
     } 
    });

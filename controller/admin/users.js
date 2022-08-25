@@ -1,7 +1,7 @@
 const User = require("../../models/User");
 const Scale = require("../../models/Scale");
 
-exports.userlist = asyncFunc(async (req, res, next) => {
+exports.userlist = async (req, res, next) => {
     try{
         const users =  await User.findAll({})
         res.json({
@@ -12,9 +12,9 @@ exports.userlist = asyncFunc(async (req, res, next) => {
      } catch (e) {
          res.status(500).send()
      }    
-});
+};
 
-exports.userlistexport = asyncFunc(async (req, res, next) => {
+exports.userlistexport = async (req, res, next) => {
     try{
         const users =  await User.findAll({attributes:['id']})
         res.json({
@@ -25,27 +25,27 @@ exports.userlistexport = asyncFunc(async (req, res, next) => {
      } catch (e) {
          res.status(500).send()
      }    
-});
+};
 
-exports.dashboard = asyncFunc(async (req, res, next) => {
+exports.dashboard = async (req, res, next) => {
     try{
-        const users =  await User.count({where:{id: { [Op.ne]: '61822a13d687cc7f3be28c3b' }}})
-        const scales =  await Scale.count({})
+        const users =  await User.findAll()
+        const scales =  await Scale.findAll()
         res.json({
             status: 200,
             message: 'Users fetched successfully',
             data: {
-                users,
-                scales
+                userscount:users.length,
+                scalescount:scales.length
             }
         })       
      } catch (e) {
          res.status(500).send()
      }    
-});
+};
 
 
-exports.updateStatus = asyncFunc(async (req, res, next) => {
+exports.updateStatus = async (req, res, next) => {
     try{
         const whitelist = req.body.whitelist=="true"?true:false
         const status = req.body.status=="1"?1:0
@@ -62,9 +62,9 @@ exports.updateStatus = asyncFunc(async (req, res, next) => {
     } catch (e) {
         res.status(500).send()
     }    
-});
+};
 
-exports.del_user = asyncFunc(async (req, res, next) => {
+exports.del_user = async (req, res, next) => {
     try{
         const user_id = req.params.user_id
         const category =  await User.destroy({where:{id:user_id}})
@@ -77,9 +77,9 @@ exports.del_user = asyncFunc(async (req, res, next) => {
     } catch (e) {
         res.status(500).send()
     }    
-});
+};
 
-exports.updatewhitelistStatus = asyncFunc(async (req, res, next) => {
+exports.updatewhitelistStatus = async (req, res, next) => {
     try{
         const whitelist = req.body.whitelist=="true"?true:false
         const userid = req.body.user_id
@@ -94,44 +94,77 @@ exports.updatewhitelistStatus = asyncFunc(async (req, res, next) => {
     } catch (e) {
         res.status(500).send()
     }    
-});
+};
 
-exports.createuser = asyncFunc(async (req, res) => {
-    const userdata = new User(req.body)
-try{
-    const user = await userdata.save()
-    res.status(201).send({
-            status : 201,
-            user : user
-        }) //gives 201 created
-} catch (e) {
-   if(e.code == 11000){
-    return  res.status(400).send({ 
-        "message" : "User with this email already exist" , 
-        "errors" : e
-    })
-   }
-    res.status(400).send(e) //400 bad request 
-}
-})
+// exports.createuser = async (req, res) => {
+//     //const userdata = new User(req.body)
+// try{
+//     const user = await User.create(req.body)
+//     console.log(req.body)
+
+    
+
+//     return res.status(201).send({
+//             status : 201,
+//             user : user
+            
+//         }) //gives 201 created
+
+        
+// } catch (e) {
+//    if(e.code == 11000){
+//     return  res.status(400).send({ 
+//         "message" : "User with this email already exist" , 
+//         "errors" : e
+//     })
+//    }
+//     res.status(400).send(e.message) //400 bad request 
+// }
+// }
+
+exports.createuser = async (req, res) => {
+    try {
+      req.body.password = await bcrypt.hash(req.body.password, 10);
+      const user = await User.create(req.body);
+      res.status(200).send(user);
+    } catch (err) {
+      res.status(404).send(err);
+    }
+  };
 
 
-exports.updateuser = asyncFunc(async (req, res, next) => {
-    try{          
-        const userid = req.params.user_id
-        let user = await User.update( req.body,{where:{id:userid}})   
-        res.status(200).json({
-            status: 200,
-            message: 'User updated successfully',
-            data: user
-        })
-    } catch (e) {
-        res.status(500).send()
-    }  
-})
+// exports.updateuser = async (req, res, next) => {
+//     try{          
+//         const userid = req.params.user_id
+//         let findu=await User.findOne({where:{id:userid}})
+//         console.log(findu);
+//         let user = await User.update( req.body,{where:{id:userid}})   
+//         console.log(user);
+//         res.status(200).json({
+//             status: 200,
+//             message: 'User updated successfully',
+//             data: user
+//         })
+//     } catch (e) {
+//         res.status(500).send()
+//     }  
+// }
 
 
-exports.singleuser = asyncFunc(async (req, res, next) => {
+exports.updateuser = async (req, res) => {
+    try {
+      const user_id = req.query.user_id;
+      const user = await User.findOne({ where: { id: user_id } });
+      await user.update(req.body).then((result) => {
+        res.status(200).send(result);
+      });
+    } catch (err) {
+      res.status(404).send(err);
+    }
+  };
+
+
+exports.singleuser = async (req, res, next) => {
     try{          
         const userid = req.params.user_id
         let user = await User.findOne({where:{id:userid}})   
@@ -143,5 +176,5 @@ exports.singleuser = asyncFunc(async (req, res, next) => {
     } catch (e) {
         res.status(500).send()
     }  
-}) 
+}
 

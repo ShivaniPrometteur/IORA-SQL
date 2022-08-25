@@ -2,6 +2,7 @@ const Sequelize = require("sequelize");
 
 
 
+
 const sequelize = new Sequelize("iora", "sammy", "password", {      //Pro@8087
 
   host: "localhost",
@@ -19,8 +20,17 @@ sequelize.authenticate()
 })
 
 const db={};
+
+Object.keys(db).forEach((modelName)=>{
+  if('associate' in db[modelName]){
+    db[modelName].associate(db);
+  }
+})
 db.Sequelize=Sequelize;
 db.sequelize=sequelize;
+
+// db.User.hasOne(db.Order);
+// db.Scale.hasOne(db.Order);
 
 db.sequelize.sync()
 .then(()=>{

@@ -11,9 +11,9 @@ exports.login = rules([
 
 
 // Check mongo id 
-exports.isMongoId = (field) => {
-    return rules([
-        query(field, `Invalid value ${field}`).optional().isMongoId().bail()
-    ])
-}
+// exports.isMongoId = (field) => {
+//     return rules([
+//         query(field, `Invalid value ${field}`).optional().isMongoId().bail()
+//     ])
+// }
 
