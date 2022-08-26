@@ -1,7 +1,7 @@
 const { asyncFunc, throwError } = require("../lib/functions"),
     User = require("../models/User"),
     UserSession = require("../models/UserSession"),
-    Notification = require("../models/Notification"),
+    Notification = require("../models/Nottification"),
     Config = require('config');
     let FIREBASE_SERVER_KEY = Config.get("FIREBASE_SERVER_KEY")
     moment = require('moment-timezone');
@@ -22,7 +22,7 @@ exports.notification_list = asyncFunc(async (req, res, next) => {
     if(!req.body.user){
         return res.status(400).send({msg:"please provide user id"})
     }
-    let notifications = await Notification.findAll({where:{userId:user},order:['created_at','DESC']}); 
+    let notifications = await Notification.findAll({where:{userId:user}}); 
     notifications = notifications.map((notiData,index)=>{
         notistatus = notiData.notistatus?notiData.notistatus:false;
         notiData = {

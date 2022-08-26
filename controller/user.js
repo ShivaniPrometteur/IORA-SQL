@@ -185,7 +185,7 @@ exports.update_profile = asyncFunc(async (req, res, next) => {
 
 exports.settings = asyncFunc(async (req, res, next) => {
     let user = req.user()
-    payload = req.body;
+    let payload = req.body;
     let notification = {
         prayer_time: payload.prayer_time ? payload.prayer_time : user.notification.prayer_time,
         other: payload.other ? payload.other : user.notification.other
@@ -195,7 +195,7 @@ exports.settings = asyncFunc(async (req, res, next) => {
     }, {where: {id:user.id}});
     res.json({
         status: 200,
-        message: res.__("Settings were update successfully"),
+        message: "Settings were update successfull",
         data: user
     })
 });
@@ -219,7 +219,7 @@ exports.emotion_update = asyncFunc(async (req, res, next) => {
     user = await user.save();
     res.json({
         status: 200,
-        message: res.__("Your emotion update successfully"),
+        message: "Your emotion update successfully",
         data: user
     })
 });
@@ -380,7 +380,7 @@ exports.update_verifystatus = asyncFunc(async (req, res, next) => {
         let user = await User.findOne({ 
             where:{
                 [Op.or]:{ email:username},
-                [Op.or]:{mobile:username}
+                [Op.or]:{contact_number:username}
             }
          })
          if(!user){
@@ -436,7 +436,7 @@ exports.update_verifystatus = asyncFunc(async (req, res, next) => {
             message: 'Otp send on your email.'
         })
     } catch (e) {
-        res.status(500).send()
+        res.status(500).send(e.message)
     } 
  });
 
